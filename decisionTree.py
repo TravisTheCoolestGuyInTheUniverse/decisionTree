@@ -1,4 +1,5 @@
 import csv
+import math
 
 
 POSITIVE = "Yes"
@@ -27,8 +28,8 @@ class tree:
             return tree(examples[0].attributes["willWait"])
         elif attributes == []:
             return pluralityValue(examples)
-        else:
-            
+        #else:
+
 
 
 
@@ -52,6 +53,59 @@ class tree:
                 return False
         return True
 
+    def importance(self, attributes, examples):
+        posAndNeg = self.numPosNeg(examples)
+        p = posAndNeg[0]
+        n = posAndNeg[1]
+
+
+
+    def gain(self, attribute, examples, p, n):
+        return self.entropy(p/(p+n)) - self.remainder(attribute, examples, p, n)
+
+    def entropy(self, input):
+        print(input)
+        return -(input*math.log(input, 2) + (1-input) * math.log(1 - input, 2))
+
+    def remainder(self, attribute, examples, p, n):
+        valueCount = self.posNegExampleCount(examples, attribute)
+        remainder = 0.0
+        for value in valueCount:
+            pk = valueCount[value][0]
+            nk = valueCount[value][1]
+            #remainder += ((pk + nk)/(p + n)) * self.entropy(pk / (pk + nk))
+        return remainder
+
+
+    """
+    finds the number of positive and negative examples
+    in set of examples. returns p, n as a tuple
+    """
+    def numPosNeg(self, examples):
+        p = n = 0
+        for example in examples:
+            if example.attributes["willWait"] == POSITIVE:
+                p += 1
+            elif example.attributes["willWait"] == NEGATIVE:
+                n += 1
+        return (p, n)
+
+    def posNegExampleCount(self, examples, attribute):
+        valueCount = {}
+        for example in examples:
+            value = example.attributes[attribute]
+            if valueCount.get(value, False):
+                if example.attributes["willWait"] == POSITIVE:
+                    valueCount[value][0] += 1
+                else:
+                    valueCount[value][1] += 1
+            elif example.attributes["willWait"] == POSITIVE:
+                valueCount[value] = [1, 0]
+            else:
+                valueCount[value] = [0, 1]
+        return valueCount
+
+
 
 def readData(csvName, examples):
     with open(csvName, newline = '') as f:
@@ -71,6 +125,18 @@ if __name__ == "__main__":
 
     #print(tree("yeet").pluralityValue(examples).node)
     #print(tree("yeet").allSameClassification(examples))
+
+    #x = tree("yeet").entropy(.99)
+    #print(x)
+    #print(f'p: {x[0]}, n: {x[1]}')
+
+    """x = tree("yeet").numPosNegForAttributeValue(examples, "pat")
+    for key in x:
+        print(f'{key}: positive: {x[key][0]}')
+        print(f'{key}: negative: {x[key][1]}')"""
+
+    x = tree("yeet").gain("pat", examples, 6, 6)
+    #print(x)
 
 
 
