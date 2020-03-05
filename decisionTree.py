@@ -81,21 +81,29 @@ class tree:
         posAndNeg = self.numPosNeg(examples)
         p = posAndNeg[0]
         n = posAndNeg[1]
-        bestGain = currentGain = 0.0
+
+        print(f'p: {p}, n: {n}')
+        """for example in examples:
+            print(example.attributes)"""
+
+        bestGain = currentGain = -1.0
         bestAttribute = attributes.pop()
         attributes.add(bestAttribute)
         for attribute in attributes:
             currentGain = self.gain(attribute, examples, p, n)
-            if currentGain > bestGain:
+            print(f'attribute: {attribute}, gain: {currentGain}')
+            if currentGain >= bestGain:
                 bestGain = currentGain
                 bestAttribute = attribute
+        print(f'bestAttribute: {bestAttribute}')
+        print()
         return bestAttribute
 
 
 
 
     def gain(self, attribute, examples, p, n):
-        return self.entropy(p/(p+n)) - self.remainder(attribute, examples, p, n)
+        return round(self.entropy(p/(p+n)) - self.remainder(attribute, examples, p, n), 4)
 
     def entropy(self, input):
         #print(input)
@@ -152,6 +160,21 @@ class tree:
             values.add(example.attributes[attribute])
         return values
 
+    def askUser(self, examples):
+        if self.node != POSITIVE and self.node != NEGATIVE:
+            print(f"Type a value for {self.node}")
+            values = self.getAttributeValues(examples, self.node)
+            print(f"possible values: [{values}]")
+            value = input()
+            for connection in self.connections:
+                if connection[1] == value:
+                    connection[0].askUser(examples)
+        else:
+            print(f'DECISION: {self.node}!!!')
+
+
+
+
 
 
 def readData(csvName, examples):
@@ -195,7 +218,8 @@ if __name__ == "__main__":
         print(value)"""
 
     x = tree("root").treeLearningAlgorithm(examples, attributes, examples)
-    x.printTree()
+    #x.printTree()
+    x.askUser(examples)
 
 
 
