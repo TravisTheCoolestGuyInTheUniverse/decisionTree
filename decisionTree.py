@@ -17,18 +17,42 @@ class tree:
         self.node = node
         #connections are values of attribute along with a connection to another node
         self.connections = []
+        self.parent = None
+        self.valueToParent = None
 
-    def addConnection(self, node, value):
-        self.connections.append((tree(node), value))
+    def addConnection(self, branch, value):
+        self.connections.append((branch, value))
+        branch.parent = self.node
+        branch.valueToParent = value
+
+    def printTree(self):
+        print(f'{self.node} Parent: {self.parent} value: {self.valueToParent}')
+        for connection in self.connections:
+            connection[0].printTree()
+
 
     def treeLearningAlgorithm(self, examples, attributes, parentExamples):
         if examples == []:
-            return pluralityValue(parentExamples)
-        elif allSameClassification(examples):
+            return self.pluralityValue(parentExamples)
+        elif self.allSameClassification(examples):
             return tree(examples[0].attributes["willWait"])
-        elif attributes == []:
-            return pluralityValue(examples)
-        #else:
+        elif attributes == set():
+            return self.pluralityValue(examples)
+        else:
+            A = self.importance(attributes, examples)
+            tre = tree(A)
+            #print(examples[0].attributes)
+            values = self.getAttributeValues(examples, A)
+            exs = []
+            for value in values:
+                for example in examples:
+                    if example.attributes[A] == value:
+                        exs.append(example)
+                if A in attributes:
+                    attributes.remove(A)
+                subtree = self.treeLearningAlgorithm(exs, attributes, examples)
+                tre.addConnection(subtree, value)
+            return tre
 
 
 
@@ -57,6 +81,16 @@ class tree:
         posAndNeg = self.numPosNeg(examples)
         p = posAndNeg[0]
         n = posAndNeg[1]
+        bestGain = currentGain = 0.0
+        bestAttribute = attributes.pop()
+        attributes.add(bestAttribute)
+        for attribute in attributes:
+            currentGain = self.gain(attribute, examples, p, n)
+            if currentGain > bestGain:
+                bestGain = currentGain
+                bestAttribute = attribute
+        return bestAttribute
+
 
 
 
@@ -64,8 +98,12 @@ class tree:
         return self.entropy(p/(p+n)) - self.remainder(attribute, examples, p, n)
 
     def entropy(self, input):
-        print(input)
-        return -(input*math.log(input, 2) + (1-input) * math.log(1 - input, 2))
+        #print(input)
+        #if input is 0 or 1, there is no entropy. but when 0 or 1 is input, throws error.
+        if input <= 0 or input >= 1:
+            return 0
+        else:
+            return -(input*math.log(input, 2) + (1-input) * math.log(1 - input, 2))
 
     def remainder(self, attribute, examples, p, n):
         valueCount = self.posNegExampleCount(examples, attribute)
@@ -73,7 +111,10 @@ class tree:
         for value in valueCount:
             pk = valueCount[value][0]
             nk = valueCount[value][1]
-            #remainder += ((pk + nk)/(p + n)) * self.entropy(pk / (pk + nk))
+            #print(f'pk: {pk}, nk: {nk}')
+            #print(pk / (pk + nk))
+            entropy = self.entropy(pk / (pk + nk))
+            remainder += ((pk + nk)/(p + n)) * entropy
         return remainder
 
 
@@ -105,6 +146,12 @@ class tree:
                 valueCount[value] = [0, 1]
         return valueCount
 
+    def getAttributeValues(self, examples, attribute):
+        values = set()
+        for example in examples:
+            values.add(example.attributes[attribute])
+        return values
+
 
 
 def readData(csvName, examples):
@@ -120,8 +167,8 @@ def readData(csvName, examples):
 if __name__ == "__main__":
     examples = []
     readData("restaurant.csv", examples)
-    for ex in examples:
-        print(f'{ex.attributes}')
+    '''for ex in examples:
+        print(f'{ex.attributes}')'''
 
     #print(tree("yeet").pluralityValue(examples).node)
     #print(tree("yeet").allSameClassification(examples))
@@ -135,8 +182,20 @@ if __name__ == "__main__":
         print(f'{key}: positive: {x[key][0]}')
         print(f'{key}: negative: {x[key][1]}')"""
 
-    x = tree("yeet").gain("pat", examples, 6, 6)
+    #x = tree("yeet").gain("type", examples, 6, 6)
+    #x = tree("yeet").entropy(0.0)
     #print(x)
+    attributes = {"alt", "bar", "fri", "hun", "pat",\
+    "price", "rain", "res", "type", "est"}
+    """x = tree("yeet").importance(attributes, examples)
+    print(x)"""
+
+    """x = tree("yeet").getAttributeValues(examples, "willWait")
+    for value in x:
+        print(value)"""
+
+    x = tree("root").treeLearningAlgorithm(examples, attributes, examples)
+    x.printTree()
 
 
 
